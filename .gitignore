@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.env
+
+# large model weights
+checkpoint.pt
+
+# downloaded corpus
+data/input.txt
