@@ -61,14 +61,14 @@ Every integer token ID is mapped to a learned `n_embd`-dimensional vector by `nn
 Because the self-attention operation is permutation-invariant, the model has no idea *where* a token sits in the sequence unless we tell it.  
 A second learned embedding table `nn.Embedding(block_size, n_embd)` maps each absolute position (0 … T-1) to a vector and adds it to the token embedding, giving the model positional awareness.
 
-Both tables are initialised with `N(0, 0.02)` — small enough that the initial logits are near-uniform.
+Both tables are initialised with `N(0, 0.02)`, small enough that the initial logits are near-uniform.
 
 ---
 
 ### 2. Causal (masked) multi-head self-attention
 
 Self-attention lets every position gather information from every other position in a single matrix multiply.  
-Three linear projections produce **queries** Q, **keys** K, and **values** V from the input — all packed into one weight matrix for efficiency:
+Three linear projections produce **queries** Q, **keys** K, and **values** V from the input, all packed into one weight matrix for efficiency:
 
 ```
 Attention(Q, K, V) = softmax( Q Kᵀ / √d_head ) · V
@@ -80,7 +80,7 @@ Attention(Q, K, V) = softmax( Q Kᵀ / √d_head ) · V
 Each head can specialise in a different relationship (syntax, coreference, position, …).
 
 **Causal mask**: a lower-triangular matrix of ones is stored as a buffer and used to set future positions to −∞ before the softmax.  
-This means position *t* can only attend to positions ≤ t — essential for autoregressive language modelling.
+This means position *t* can only attend to positions ≤ t: essential for autoregressive language modelling.
 
 ---
 
@@ -93,7 +93,7 @@ x → Linear(n_embd → 4·n_embd) → GELU → Linear(4·n_embd → n_embd) →
 ```
 
 The 4× expansion gives the model extra capacity to learn nonlinear transformations.  
-GELU (Gaussian Error Linear Unit) is used instead of ReLU — it has a smooth gradient near zero, which empirically helps transformers converge.
+GELU (Gaussian Error Linear Unit) is used instead of ReLU: it has a smooth gradient near zero, which empirically helps transformers converge.
 
 ---
 
@@ -114,7 +114,7 @@ The **pre-norm** arrangement (normalise before, not after) is more stable than t
 ### 5. Layer normalisation
 
 `nn.LayerNorm` normalises each token's feature vector to zero mean and unit variance, then applies learned per-feature scale (γ) and shift (β).  
-Unlike batch normalisation, LayerNorm operates over the feature dimension so its statistics are independent of batch size and sequence length — important for variable-length sequences.
+Unlike batch normalisation, LayerNorm operates over the feature dimension so its statistics are independent of batch size and sequence length, important for variable-length sequences.
 
 ---
 
@@ -132,7 +132,7 @@ This halves the parameter count for the vocabulary matrices, regularises trainin
 
 ### 7. Residual stream scaling
 
-Residual projections (`c_proj`) are initialised with a smaller standard deviation — `0.02 / √(2 · n_layer)` — so that at initialisation the variance of the residual stream stays roughly constant with depth, rather than growing with every layer added.
+Residual projections (`c_proj`) are initialised with a smaller standard deviation, `0.02 / √(2 · n_layer)`, so that at initialisation the variance of the residual stream stays roughly constant with depth, rather than growing with every layer added.
 
 ---
 
@@ -144,7 +144,7 @@ model.generate(idx, max_new_tokens=500, temperature=0.8, top_k=40)
 
 Autoregressive decoding: feed the current context, take the logit for the **last** position, sample the next token, append it, repeat.
 
-* **Temperature** divides the logits before softmax — `< 1` sharpens the distribution (more deterministic), `> 1` flattens it (more random).
+* **Temperature** divides the logits before softmax: `< 1` sharpens the distribution (more deterministic), `> 1` flattens it (more random).
 * **Top-k** restricts sampling to the k highest-probability tokens by setting all other logits to −∞, preventing the model from hallucinating very unlikely tokens.
 
 ---
@@ -172,10 +172,10 @@ Swap in the commented-out full config for better quality.
 
 ```
 nano-gpt/
-├── model.py        — GPTConfig, CausalSelfAttention, MLP, Block, GPT
-├── train.py        — data loading, training loop, cosine LR, loss plot
-├── generate.py     — load checkpoint and sample text
-├── loss_curve.png  — training / validation loss (generated after train.py)
+├── model.py        : GPTConfig, CausalSelfAttention, MLP, Block, GPT
+├── train.py        : data loading, training loop, cosine LR, loss plot
+├── generate.py     : load checkpoint and sample text
+├── loss_curve.png  : training / validation loss (generated after train.py)
 ├── requirements.txt
 └── README.md
 ```
