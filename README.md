@@ -12,6 +12,14 @@ step  3000/3000 │ train 1.4746 │ val 1.6589   ✓ 97 s on Apple MPS
 
 ![Training loss curve](loss_curve.png)
 
+The model is trained with next-token cross-entropy loss (`F.cross_entropy` in
+`model.py`), averaged over every position in every sequence in the batch:
+
+$$\mathcal{L} = -\frac{1}{T}\sum_{t=1}^{T} \log p_\theta\!\left(x_{t+1} \mid x_{\le t}\right)$$
+
+The `train`/`val` numbers above and in the plot are this loss (nats, base $e$), not
+perplexity.
+
 ---
 
 ## Quick start
@@ -68,13 +76,11 @@ Both tables are initialised with `N(0, 0.02)`, small enough that the initial log
 ### 2. Causal (masked) multi-head self-attention
 
 Self-attention lets every position gather information from every other position in a single matrix multiply.  
-Three linear projections produce **queries** Q, **keys** K, and **values** V from the input, all packed into one weight matrix for efficiency:
+Three linear projections produce **queries** $Q$, **keys** $K$, and **values** $V$ from the input, all packed into one weight matrix for efficiency:
 
-```
-Attention(Q, K, V) = softmax( Q Kᵀ / √d_head ) · V
-```
+$$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d_{head}}}\right) V$$
 
-`√d_head` keeps the dot-product variance stable regardless of head size.
+$\sqrt{d_{head}}$ keeps the dot-product variance stable regardless of head size.
 
 **Multi-head** attention splits the embedding into `n_head` independent subspaces, runs attention in each, then concatenates and projects back.  
 Each head can specialise in a different relationship (syntax, coreference, position, …).
@@ -132,7 +138,7 @@ This halves the parameter count for the vocabulary matrices, regularises trainin
 
 ### 7. Residual stream scaling
 
-Residual projections (`c_proj`) are initialised with a smaller standard deviation, `0.02 / √(2 · n_layer)`, so that at initialisation the variance of the residual stream stays roughly constant with depth, rather than growing with every layer added.
+Residual projections (`c_proj`) are initialised with a smaller standard deviation, $0.02 / \sqrt{2 \cdot n_{layer}}$, so that at initialisation the variance of the residual stream stays roughly constant with depth, rather than growing with every layer added.
 
 ---
 
