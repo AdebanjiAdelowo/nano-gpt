@@ -35,29 +35,28 @@ python generate.py --prompt "To be or not to be" --max_new_tokens 300
 
 ## Architecture
 
+```mermaid
+flowchart TD
+    T["character token ids (B, T)"] --> WTE["token embedding<br/>vocab_size × n_embd"]
+    T --> WPE["positional embedding<br/>block_size × n_embd"]
+    WTE --> ADD0(("+"))
+    WPE --> ADD0
+    ADD0 --> X0["residual stream x"]
+    subgraph BLK["Block, repeated n_layer times (pre-norm)"]
+        LN1["LayerNorm"] --> ATT["causal multi-head self-attention<br/>n_head heads, lower-triangular mask"]
+        ATT --> R1(("+"))
+        R1 --> LN2["LayerNorm"] --> MLP["MLP: Linear 4× → GELU → Linear → Dropout"]
+        MLP --> R2(("+"))
+    end
+    X0 --> LN1
+    X0 -.skip.-> R1
+    R1 -.skip.-> R2
+    R2 --> LNF["final LayerNorm"] --> HEAD["linear LM head<br/>(weights tied to token embedding)"]
+    HEAD --> LOG["logits over vocab → cross-entropy / sampling"]
 ```
-tokens
-  │
-  ▼
-[Token Embedding]  +  [Positional Embedding]
-  │
-  ▼  ×n_layer
-┌─────────────────────────────────────────────┐
-│  LayerNorm                                  │
-│      │                                      │
-│  CausalSelfAttention ──► residual add       │
-│                                  │          │
-│  LayerNorm                       │          │
-│      │                           │          │
-│  MLP (FFN)       ──► residual add           │
-└─────────────────────────────────────────────┘
-  │
-  ▼
-[LayerNorm]
-  │
-  ▼
-[Linear head → logits over vocab]
-```
+
+The training run shown above uses the smaller configuration in `train.py` (4 layers, 4 heads,
+`n_embd` 128, context 128); the `GPTConfig` defaults are listed under Configuration.
 
 ---
 
