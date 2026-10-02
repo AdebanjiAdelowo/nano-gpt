@@ -3,9 +3,13 @@ __pycache__/
 *.pyo
 .DS_Store
 .env
+.pytest_cache/
 
 # large model weights
 checkpoint.pt
+
+# per-run outputs (checkpoints, loss curves, run metadata)
+results/
 
 # downloaded corpus
 data/input.txt

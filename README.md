@@ -26,10 +26,15 @@ perplexity.
 
 ```bash
 pip install -r requirements.txt
-python train.py          # downloads corpus, trains, saves checkpoint + loss curve
-python generate.py       # generate 500 chars from a newline prompt
+python train.py          # downloads corpus, trains, saves a run under results/
+python generate.py       # generate 500 chars from the newest checkpoint
 python generate.py --prompt "To be or not to be" --max_new_tokens 300
 ```
+
+Each run writes `checkpoint.pt`, `loss_curve.png` and `run_meta.json` into its own
+directory, `results/<timestamp>-<device>/` unless `--out-dir` is given. The device is
+chosen automatically (CUDA, then MPS, then CPU) or set with `--device cpu|mps|cuda`.
+See [REMOTE_GPU.md](REMOTE_GPU.md) for running on Colab, Kaggle or another NVIDIA GPU.
 
 ---
 
@@ -180,7 +185,11 @@ nano-gpt/
 ├── model.py        : GPTConfig, CausalSelfAttention, MLP, Block, GPT
 ├── train.py        : data loading, training loop, cosine LR, loss plot
 ├── generate.py     : load checkpoint and sample text
-├── loss_curve.png  : training / validation loss (generated after train.py)
+├── run_utils.py    : device selection, run metadata, output directories
+├── colab/          : run_cuda.ipynb, launcher for a Colab GPU
+├── tests/          : tests for device selection and output protection
+├── loss_curve.png  : training / validation loss of the run shown above (Apple MPS)
+├── REMOTE_GPU.md   : running on Colab, Kaggle or another NVIDIA GPU
 ├── requirements.txt
 └── README.md
 ```

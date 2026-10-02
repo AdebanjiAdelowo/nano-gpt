@@ -5,6 +5,7 @@ Usage:
     python generate.py
     python generate.py --prompt "To be or not to be" --max_new_tokens 300
     python generate.py --temperature 1.2 --top_k 50
+    python generate.py --checkpoint results/colab-cuda/checkpoint.pt --device cpu
 """
 
 import argparse
@@ -12,11 +13,15 @@ import argparse
 import torch
 
 from model import GPT
+from run_utils import DEVICE_CHOICES, find_checkpoint, resolve_device
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="nano-gpt text generation")
-    parser.add_argument("--checkpoint",     default="checkpoint.pt")
+    parser.add_argument("--checkpoint",     default=None,
+                        help="default: newest results/*/checkpoint.pt, else checkpoint.pt")
+    parser.add_argument("--device",         default="auto", choices=DEVICE_CHOICES,
+                        help="auto = CUDA if available, else MPS, else CPU")
     parser.add_argument("--prompt",         default="\n",       help="conditioning text")
     parser.add_argument("--max_new_tokens", default=500,  type=int)
     parser.add_argument("--temperature",    default=0.8,  type=float,
@@ -30,13 +35,14 @@ def main() -> None:
     if args.seed is not None:
         torch.manual_seed(args.seed)
 
-    device = (
-        "cuda" if torch.cuda.is_available()
-        else "mps" if torch.backends.mps.is_available()
-        else "cpu"
-    )
+    try:
+        device     = resolve_device(args.device)
+        checkpoint = args.checkpoint or find_checkpoint()
+    except (RuntimeError, FileNotFoundError) as err:
+        parser.error(str(err))
 
-    ckpt   = torch.load(args.checkpoint, map_location=device, weights_only=False)
+    # map_location makes a checkpoint written on CUDA, MPS or CPU load on any of them
+    ckpt   = torch.load(checkpoint, map_location=device, weights_only=False)
     config = ckpt["config"]
     stoi   = ckpt["stoi"]
     itos   = ckpt["itos"]
@@ -49,7 +55,7 @@ def main() -> None:
     model.eval()
 
     print(
-        f"Loaded checkpoint  │  "
+        f"Loaded {checkpoint} on {device}  │  "
         f"{config.n_layer}L · {config.n_head}H · {config.n_embd}D  │  "
         f"train loss {ckpt.get('train_loss', '?'):.4f}  │  "
         f"val loss {ckpt.get('val_loss', '?'):.4f}\n"
